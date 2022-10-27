@@ -18,16 +18,12 @@ export default {
   },
   data() {
     return {
-      tab: null,
-      items: [
-        {tab: 'Wallet', id: 4},
-      ],
     }
   },
   methods: {
   },
   computed: {
-    ...mapFields("connectweb3", ["account", "isConnected"]),
+    ...mapFields("connectweb3", ["isConnected"]),
   },
 }
 </script>
