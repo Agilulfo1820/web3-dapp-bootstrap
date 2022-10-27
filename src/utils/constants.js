@@ -1,0 +1,1 @@
+export const GOERLI_RPC = "https://goerli.infura.io/v3/62034761e1a04f9da698903f3b2df39b";
