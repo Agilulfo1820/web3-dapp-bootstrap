@@ -28,8 +28,6 @@
             <span>Clicca qui per vedere su explorer</span>
           </v-tooltip>
 
-    
-
         </v-chip>
 
         <v-tooltip bottom style="text-align: center" v-if="!isGoerliChain">
@@ -38,7 +36,7 @@
                   v-bind="attrs" v-on="on" @click="addGoerliToMetamask"
             >{{ chainId | networkName }}</span>
           </template>
-          <span >Clicca qui per usare BNB Smart Chain!</span>
+          <span >Clicca qui per usare la chain corretta!</span>
         </v-tooltip>
         <span v-else style="padding-left: 5px; font-weight: 500;">{{ chainId | networkName }}</span>
       </v-chip>

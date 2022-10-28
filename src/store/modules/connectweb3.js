@@ -14,7 +14,7 @@ export default {
         isConnected: false,
         account: null,
         chainId: null,
-        ETHBalance: null,
+        ETHBalance: 0,
     },
     getters: {
         getField,
@@ -37,7 +37,7 @@ export default {
     },
     mutations: {
         updateField,
-        setConnected: (state, payload) => state.isConnected = payload,
+        setIsConnected: (state, payload) => state.isConnected = payload,
         setETHBalance: (state, payload) => state.ETHBalance = payload,
         disconnectWallet: async function (state) {
             state.connected = {}
@@ -46,19 +46,28 @@ export default {
         },
     },
     actions: {
-        setWeb3: async function (context, payload) {
-            let {web3, connected} = payload
-            let state = context.state
-            console.log("connected", connected)
+        startWeb3: async function (context) {
+            let web3 = new ethers.providers.JsonRpcProvider(GOERLI_RPC)
 
-            if (connected) {
-                state = context.state.connected
-                state.web3 = web3
+            context.dispatch("setWeb3", {web3, isConnected: false})
+
+            if (this._vm.$web3Modal.cachedProvider) {
+                //This is case where someone already connected
+                context.dispatch("connectWallet")
+            }
+        },
+        setWeb3: async function (context, payload) {
+            let {web3, isConnected} = payload
+            let state = context.state
+            console.log("connected", isConnected)
+
+            if (isConnected) {
+                state.connected.web3 = web3
                 let signer = await web3.getSigner()
-                state.signer = signer
+                state.connected.signer = signer
+
                 context.state.account = (await signer.getAddress())
                 context.state.chainId = (await web3.getNetwork()).chainId
-                console.log('Chain ID: ', context.state.chainId)
 
                 context.dispatch('updateAssets')
             } else {
@@ -81,8 +90,8 @@ export default {
 
             if (hasProvider) {
                 const web3 = new ethers.providers.Web3Provider(provider)
-                await context.dispatch("setWeb3", {web3, connected: true})
-                context.commit("setConnected", true)
+                await context.dispatch("setWeb3", {web3, isConnected: true})
+                context.commit("setIsConnected", true)
 
                 // eslint-disable-next-line no-unused-vars
                 provider.on("accountsChanged", (accounts) => {
@@ -108,7 +117,7 @@ export default {
             context.dispatch("removeAllCookies")
 
             context.commit("disconnectWallet")
-            context.commit("setConnected", false)
+            context.commit("setIsConnected", false)
         },
         removeAllCookies: () => {
             window.localStorage.clear()
@@ -129,23 +138,17 @@ export default {
                 });
             }
         },
-        startWeb3: async function (context) {
-            let web3 = new ethers.providers.JsonRpcProvider(GOERLI_RPC)
-
-            context.dispatch("setWeb3", {web3, connected: false})
-
-            if (this._vm.$web3Modal.cachedProvider) {
-                //This is case where someone already connected
-                context.dispatch("connectWallet")
-            }
-        },
         async updateETHBalance(context) {
-            console.log("updating BNB Balance")
-            let account = context.state.account
-            await context.state.web3.getBalance(account).then(async (balance) => {
-                console.log('updated BNB balance', balance.toString())
-                context.commit("setETHBalance", ethers.utils.formatEther(balance.toString()))
-            })
+            if (context.state.connected && context.state.connected.signer) {
+
+                context.state.connected.signer.getBalance().then(async function (balance) {
+                    console.log('updated ETH balance', balance.toString())
+                    context.commit("setETHBalance", ethers.utils.formatEther(balance.toString()))
+                });
+                
+            } else {
+                await context.commit('setETHBalance', 0 );
+            }
         },
         updateAssets(context) {
             context.commit("setETHBalance", null)
